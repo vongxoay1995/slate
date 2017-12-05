@@ -1,239 +1,127 @@
----
-title: API Reference
+BCT Android SDK
+==========================
 
-language_tabs: # must be one of https://git.io/vQNgJ
-  - shell
-  - ruby
-  - python
-  - javascript
+BCT Android SDK is a library to support build call apps with Twilio.
 
-toc_footers:
-  - <a href='#'>Sign Up for a Developer Key</a>
-  - <a href='https://github.com/lord/slate'>Documentation Powered by Slate</a>
 
-includes:
-  - errors
+Setup Project
+=====
 
-search: true
----
+*For a working implementation of this project see the `sample/` folder.*
 
-# Introduction
-
-Welcome to the Kittn API! You can use our API to access Kittn API endpoints, which can get information on various cats, kittens, and breeds in our database.
-
-We have language bindings in Shell, Ruby, and Python! You can view code examples in the dark area to the right, and you can switch the programming language of the examples with the tabs in the top right.
-
-This example API documentation page was created with [Slate](https://github.com/lord/slate). Feel free to edit it and use it as a base for your own API's documentation.
-
-# Authentication
-
-> To authorize, use this code:
-
-```ruby
-require 'kittn'
-
-api = Kittn::APIClient.authorize!('meowmeowmeow')
+   1. Coppy folder in path `AndroidSDK\callsdk\build\repo`. Paste into folder libs in my project by following path: `[Project_name]\app\build\libs`.
+  
+   2. At your project, which you you're development,add rules to your root-level build.gradle file,
+    to include the Maven repository local contains the BCT Android SDK :
+	
+	```
+    allprojects {
+	  repositories {
+		jcenter()
+	    maven{
+		  url "$buildDir/libs"
+	    }
+	  }
+    }
+ or...
+allprojects {
+	  repositories {
+		jcenter()
+		maven{
+		  url "../app/build/libs"
+		}
+	  }
+    }
 ```
+   3. Then, in your module Gradle file (usually the app/build.gradle), add the dependency below:
+  
+	```
+    dependencies {
+          compile ('com.bct:android-sdk:0.5.0'){
+             transitive=true
+         }
+    }
+	```
+	
+Setup Firebase
+=====
+ 1. Firebase 
+   The BCT Android SDK uses Firebase Cloud Messaging push notifications to let your application know when it is receiving an incoming call. If you want your users to receive incoming calls,
+   you’ll need to enable FCM in your application.
+   Follow the steps under Use the Firebase Assistant in the Firebase Developers Guide. Once you connect and sync to Firebase successfully, you will be able to download the google-services.json for your application.
+   Login to Firebase console and make a note of generated Server API Key in your notepad. You will need them in the next step.
+   
+   
+   Make sure the generated google-services.json is downloaded to the app directory of the your project to replace the existing app/google-services.json stub json file. If you are using the Firebase plugin make sure to remove the stub google-services.json file first.
+   As a final step re-run the application from Android Studio to ensure the APK now has the latest google-services.json file.
+   You can refer to the following link : https://firebase.google.com/docs/android/setup 
+   
+   
+2. Add a Push Credential using your FCM Server API Key
 
-```python
-import kittn
+   You will need to store the FCM Server API Key with BCT Server so that we can send push notifications to your app on your behalf. Once you store the API Key with BCT server, it will get assigned a Push Credential SID so that you can later specify which key we should use to send push notifications.
+   You must send my FCM Server API Key to BCT Server.   
+3. Create class SdkService 
+   code  below:
+   ```public class SDKService extends IntentService {
+    ...
+    public String fcmToken;
+    @Override
+    protected void onHandleIntent(@Nullable Intent intent) {
+        fcmToken= FirebaseInstanceId.getInstance().getToken();
+        BCTHelper.getInstance().retrieveCapabilityToken(fcmToken);
+    }
+    ...
+   }```
+ 3. Then, in your module Gradle file (usually the app/build.gradle), add the dependency below:
 
-api = kittn.authorize('meowmeowmeow')
-```
-
-```shell
-# With shell, you can just pass the correct header with each request
-curl "api_endpoint_here"
-  -H "Authorization: meowmeowmeow"
-```
-
-```javascript
-const kittn = require('kittn');
-
-let api = kittn.authorize('meowmeowmeow');
-```
-
-> Make sure to replace `meowmeowmeow` with your API key.
-
-Kittn uses API keys to allow access to the API. You can register a new Kittn API key at our [developer portal](http://example.com/developers).
-
-Kittn expects for the API key to be included in all API requests to the server in a header that looks like the following:
-
-`Authorization: meowmeowmeow`
-
-<aside class="notice">
-You must replace <code>meowmeowmeow</code> with your personal API key.
-</aside>
-
-# Kittens
-
-## Get All Kittens
-
-```ruby
-require 'kittn'
-
-api = Kittn::APIClient.authorize!('meowmeowmeow')
-api.kittens.get
-```
-
-```python
-import kittn
-
-api = kittn.authorize('meowmeowmeow')
-api.kittens.get()
-```
-
-```shell
-curl "http://example.com/api/kittens"
-  -H "Authorization: meowmeowmeow"
-```
-
-```javascript
-const kittn = require('kittn');
-
-let api = kittn.authorize('meowmeowmeow');
-let kittens = api.kittens.get();
-```
-
-> The above command returns JSON structured like this:
-
-```json
-[
-  {
-    "id": 1,
-    "name": "Fluffums",
-    "breed": "calico",
-    "fluffiness": 6,
-    "cuteness": 7
-  },
-  {
-    "id": 2,
-    "name": "Max",
-    "breed": "unknown",
-    "fluffiness": 5,
-    "cuteness": 10
-  }
-]
-```
-
-This endpoint retrieves all kittens.
-
-### HTTP Request
-
-`GET http://example.com/api/kittens`
-
-### Query Parameters
-
-Parameter | Default | Description
---------- | ------- | -----------
-include_cats | false | If set to true, the result will also include cats.
-available | true | If set to false, the result will include kittens that have already been adopted.
-
-<aside class="success">
-Remember — a happy kitten is an authenticated kitten!
-</aside>
-
-## Get a Specific Kitten
-
-```ruby
-require 'kittn'
-
-api = Kittn::APIClient.authorize!('meowmeowmeow')
-api.kittens.get(2)
-```
-
-```python
-import kittn
-
-api = kittn.authorize('meowmeowmeow')
-api.kittens.get(2)
-```
-
-```shell
-curl "http://example.com/api/kittens/2"
-  -H "Authorization: meowmeowmeow"
-```
-
-```javascript
-const kittn = require('kittn');
-
-let api = kittn.authorize('meowmeowmeow');
-let max = api.kittens.get(2);
-```
-
-> The above command returns JSON structured like this:
-
-```json
-{
-  "id": 2,
-  "name": "Max",
-  "breed": "unknown",
-  "fluffiness": 5,
-  "cuteness": 10
-}
-```
-
-This endpoint retrieves a specific kitten.
-
-<aside class="warning">Inside HTML code blocks like this one, you can't use Markdown, so use <code>&lt;code&gt;</code> blocks to denote code.</aside>
-
-### HTTP Request
-
-`GET http://example.com/kittens/<ID>`
-
-### URL Parameters
-
-Parameter | Description
---------- | -----------
-ID | The ID of the kitten to retrieve
-
-## Delete a Specific Kitten
-
-```ruby
-require 'kittn'
-
-api = Kittn::APIClient.authorize!('meowmeowmeow')
-api.kittens.delete(2)
-```
-
-```python
-import kittn
-
-api = kittn.authorize('meowmeowmeow')
-api.kittens.delete(2)
-```
-
-```shell
-curl "http://example.com/api/kittens/2"
-  -X DELETE
-  -H "Authorization: meowmeowmeow"
-```
-
-```javascript
-const kittn = require('kittn');
-
-let api = kittn.authorize('meowmeowmeow');
-let max = api.kittens.delete(2);
-```
-
-> The above command returns JSON structured like this:
-
-```json
-{
-  "id": 2,
-  "deleted" : ":("
-}
-```
-
-This endpoint deletes a specific kitten.
-
-### HTTP Request
-
-`DELETE http://example.com/kittens/<ID>`
-
-### URL Parameters
-
-Parameter | Description
---------- | -----------
-ID | The ID of the kitten to delete
-
+	```
+    dependencies {
+          compile 'com.google.firebase:firebase-messaging:11.6.0'
+    }
+	```
+	
+Usage
+===============
+ 1. In your class MyService  extends IntentService. In method onHandleIntent(), You write the following commands:
+        fcmToken= FirebaseInstanceId.getInstance().getToken();
+        BCTHelper.getInstance().retrieveCapabilityToken(fcmToken);
+  
+ 2. In your class Service to receive notifications from firebase. You need to implement by VoiceHandleMessage.Listener and write the following commands:
+ 
+	```
+    public void onCreate() {
+	     ...
+        voiceHandleMessage = new VoiceHandleMessage();
+        voiceHandleMessage.setListener(this);
+        super.onCreate();
+    }
+    public void onMessageReceived(RemoteMessage remoteMessage) {
+        ...
+        if (remoteMessage.getData().size() > 0){
+            Map<String, String> data = remoteMessage.getData();
+            voiceHandleMessage.handleMessage(getApplicationContext(), data);
+        }
+    }
+	```
+	
+	BCT gives you two methods to process: 
+	```void onCallInvite(BCTCallInvite bctCallInvite);```
+	```void onError(BCTMessageException bctMessageException);```
+ 3. You can regiter identity by following api: 
+    ``` BCTHelper.getInstance().postIdentity(appKey, appSecret, clientId);```
+ 4. You need to implement BCTCallListener.Listener to listen to events:
+     . when client connect
+	``` void onConnected(BCTCall bctCall); ```
+	 . when client connected failed
+	``` void onConnectFailure(BCTCall bctCall, BCTCallException exception); ```
+	 . when client disconnect
+      ```void onDisConnected(BCTCall bctCall, BCTCallException exception);  ```
+ 5. When incomming call, you will use the following method to connect:
+     ``` void phoneAccept(CallInvite callInvite, Listener listener); ```
+ 6. When reject call, you will use the following method to reject call:
+     ``` void phoneReject(CallInvite callInvite); ```
+ 7. When end call, you will use the following method to disconnect call:
+    ```  void phoneDisconect(Call activeCall) ; ```
+ 8. When unregister BCT Android SDK, you need called to method:
+     ``` void unregisterBCTCall(); ```
